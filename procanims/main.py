@@ -74,6 +74,59 @@ while run:
     for p in ps:
         pygame.draw.circle(win, (255, 255, 255), p.pos, p.size, 4)
     
+    def average_angles(a1, a2):
+        # Convert angles to unit vectors
+        x1, y1 = math.cos(math.radians(a1)), math.sin(math.radians(a1))
+        x2, y2 = math.cos(math.radians(a2)), math.sin(math.radians(a2))
+
+        # Average the vectors
+        avg_x = (x1 + x2) / 2
+        avg_y = (y1 + y2) / 2
+
+        # Convert the resulting vector back to an angle
+        avg_angle = math.degrees(math.atan2(avg_y, avg_x))
+        
+        return avg_angle
+
+    def rotate(origin, point, angle):
+        """
+        Rotate a point clockwise by a given angle around a given origin.
+        The angle should be given in degrees.
+
+        Args:
+            origin: The point to rotate around
+            point: The point to rotate
+            angle: The angle to rotate around in degrees
+        """
+        angle = math.radians(angle)
+        cos = math.cos(angle)
+        sin = math.sin(angle)
+        ydiff = (point[1] - origin[1])
+        xdiff = (point[0] - origin[0])
+        
+        qx = origin[0] + cos * xdiff - sin * ydiff
+        qy = origin[1] + sin * xdiff + cos * ydiff
+        return qx, qy
+    
+    def draw_rounded_polygon(surface, colour, points, border_radius, width):
+        wrapped = points + [points[0]]
+        angs = [math.degrees(math.atan2(wrapped[i+1][1]-wrapped[i][1], wrapped[i+1][0]-wrapped[i][0]))-90 for i in range(len(wrapped)-1)]
+        for i in range(len(points)):
+            p1, p2 = points[i], points[i-1]
+            a = average_angles(angs[i], angs[i-1])-180
+            pygame.draw.line(surface, colour, rotate(p1, (p1[0], p1[1]-border_radius), angs[i-1]), rotate(p2, (p2[0], p2[1]+border_radius), angs[i-1]), width)
+            p = (
+                p1[0]+math.cos(math.radians(a))*border_radius,
+                p1[1]+math.sin(math.radians(a))*border_radius
+            )
+            pygame.draw.arc(surface, 
+                            colour, 
+                            (p[0]-border_radius, p[1]-border_radius, border_radius*2, border_radius*2), 
+                            math.radians(-angs[i]), 
+                            math.radians(-angs[i-1]), 
+                            width
+                           )
+    
     newps = []
     tmp = []
     for i in range(len(ps)):
@@ -98,7 +151,7 @@ while run:
                     tmp.append(newp)
     newps.extend(tmp[::-1])
     
-    pygame.draw.polygon(win, (10, 255, 50), newps, 10)
+    draw_rounded_polygon(win, (10, 255, 50), newps, 10, 5)
 
     pygame.display.update()
     clock.tick(60)
