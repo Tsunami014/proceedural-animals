@@ -83,30 +83,19 @@ class Animal:
         for p in self.segments:
             pygame.draw.circle(newsur, self.bodyCol, p.pos, p.size)
         
-        newps = []
-        tmp = []
         for i in range(len(self.segments)):
-            if i == len(self.segments) - 1:
-                ps2 = [45, 90, 135, 180, -135, -90, -45]
-                ang = self.segments[i - 1].angleTo(self.segments[i])
-            else:
-                ang = self.segments[i].angleTo(self.segments[i + 1])
-                if i == 0:
-                    ps2 = [-135, -90, -45, 0, 45, 90, 135]
-                else:
-                    ps2 = [135, 90, 45, -45, -90, -135]
-            for j in ps2:
-                newp = self.segments[i].findOnCircle(ang + j)
-                #pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
-                if i == len(self.segments) - 1 or i == 0:
-                    newps.append(newp)
-                else:
-                    if j > 0:
-                        newps.append(newp)
-                    else:
-                        tmp.append(newp)
-        newps.extend(tmp[::-1])
-        pygame.draw.polygon(newsur, self.bodyCol, newps)
+            for off in (-1, 1):
+                if i+off < 0 or i+off >= len(self.segments):
+                    continue
+                ang = self.segments[i+off].angleTo(self.segments[i])
+                newsegs = []
+                for seg, js in ((self.segments[i+off], (-90, 90)), (self.segments[i], (90, -90))):
+                    for j in js:
+                        newp = seg.findOnCircle(ang + j)
+                        #pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
+                        newsegs.append(newp)
+                pygame.draw.polygon(newsur, self.bodyCol, newsegs)
+                # pygame.draw.polygon(newsur, (255, 50, 50), newsegs, 3)
 
         mask = pygame.mask.from_surface(newsur)
         surface_outline = mask.convolve(self.convolution_mask).to_surface(setcolor=self.outlineCol, unsetcolor=newsur.get_colorkey())
