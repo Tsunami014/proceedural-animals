@@ -27,6 +27,9 @@ class Segment:
     
     def angleTo(self, opoint):
         return math.degrees(math.atan2(opoint[1] - self.y, opoint[0] - self.x))-180 % 360
+
+    def isColliding(self, opoint):
+        return math.hypot(self.x - opoint[0], self.y - opoint[1]) <= self.size + opoint[2]
     
     def __getitem__(self, key):
         if key == 0:
@@ -53,9 +56,19 @@ class Segment:
     def __repr__(self): return str(self)
 
 class Animal:
-    def __init__(self, segments, constrainSize=None):
+    def __init__(self, segments, constrainSize=None, outlineColour=(0, 0, 0), bodyColour=(255, 255, 255)):
         self.segments = segments
         self.conSze = constrainSize
+
+        self.outlineCol = outlineColour
+        self.bodyCol = bodyColour
+
+        # Thanks to https://www.youtube.com/watch?v=xPKuhqt8Pcs for the outline code!
+        self.convolution_mask = pygame.mask.Mask((3, 3), fill = True)
+        self.convolution_mask.set_at((0, 0), value = 0)
+        self.convolution_mask.set_at((2, 0), value = 0)
+        self.convolution_mask.set_at((0, 2), value = 0)
+        self.convolution_mask.set_at((2, 2), value = 0)
     
     def set_pos(self, pos):
         self.segments[-1].pos = pos
@@ -66,33 +79,41 @@ class Animal:
             self.segments[i-1].constrain(self.segments[i].pos, self.conSze)
     
     def draw(self, win):
+        newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
         for p in self.segments:
-            pygame.draw.circle(win, (255, 255, 255), p.pos, p.size)
+            pygame.draw.circle(newsur, self.bodyCol, p.pos, p.size)
         
         newps = []
         tmp = []
         for i in range(len(self.segments)):
             if i == len(self.segments) - 1:
-                ps2 = [90, 135, 180, -135, -90]
+                ps2 = [45, 90, 135, 180, -135, -90, -45]
                 ang = self.segments[i - 1].angleTo(self.segments[i])
             else:
                 ang = self.segments[i].angleTo(self.segments[i + 1])
                 if i == 0:
-                    ps2 = [-90, -45, 0, 45, 90]
+                    ps2 = [-135, -90, -45, 0, 45, 90, 135]
                 else:
-                    ps2 = [90, -90]
+                    ps2 = [135, 90, 45, -45, -90, -135]
             for j in ps2:
                 newp = self.segments[i].findOnCircle(ang + j)
-                #pygame.draw.circle(win, (255, 50, 50), newp, 2, 3)
+                #pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
                 if i == len(self.segments) - 1 or i == 0:
                     newps.append(newp)
                 else:
-                    if j == 90:
+                    if j > 0:
                         newps.append(newp)
                     else:
                         tmp.append(newp)
         newps.extend(tmp[::-1])
-        pygame.draw.polygon(win, (255, 255, 255), newps)
+        pygame.draw.polygon(newsur, self.bodyCol, newps)
+
+        mask = pygame.mask.from_surface(newsur)
+        surface_outline = mask.convolve(self.convolution_mask).to_surface(setcolor=self.outlineCol, unsetcolor=newsur.get_colorkey())
+        
+        surface_outline.blit(newsur, (1, 1))
+        
+        win.blit(surface_outline, (0, 0))
     
     def __getitem__(self, key):
         return self.segments[key]
