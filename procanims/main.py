@@ -8,7 +8,7 @@ def chooseAnimal(c):
     if c == 0:
         return makeAnimal(list(range(10, 20)) + [(25, Eyes())], 42, bodyColour=(255, 50, 50))
     if c == 1:
-        return makeAnimal([14, 23, (30, Fin((10, 50, 255))), (25, Eyes())], 42, bodyColour=(60, 100, 250))
+        return makeAnimal([10, (14, Fin((60, 100, 250), (20, 40))), 23, (30, Fin((60, 100, 250))), (25, Eyes())], 42, bodyColour=(10, 50, 255))
 
 anim = chooseAnimal(0)
 
@@ -32,8 +32,8 @@ while run:
     win.fill(pygame.color.THECOLORS["skyblue"])
 
     anim.set_pos(pygame.mouse.get_pos())
-
     anim.draw(win)
+    win.blit(pygame.font.Font(None,36).render(f'{anim.totalCurvaturePerc}%', 1, 0), (0, 0))
 
     pygame.display.update()
     clock.tick(60)

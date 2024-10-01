@@ -7,9 +7,9 @@ class layer(Enum):
 
 class Eyes:
     lay = layer.FRONT
-    def draw(self, win, body, angle):
-        pygame.draw.circle(win, (0, 0, 0), body.findOnCircle(angle-45, 0.7), 5)
-        pygame.draw.circle(win, (0, 0, 0), body.findOnCircle(angle+45, 0.7), 5)
+    def draw(self, win, body, seg, angle):
+        pygame.draw.circle(win, (0, 0, 0), seg.findOnCircle(angle-45, 0.7), 5)
+        pygame.draw.circle(win, (0, 0, 0), seg.findOnCircle(angle+45, 0.7), 5)
 
 class Fin:
     lay = layer.BEHIND
@@ -20,7 +20,7 @@ class Fin:
         self.buffer = []
         self.buffersze = buffersze
     
-    def draw(self, win, body, origangle):
+    def draw(self, win, body, seg, origangle):
         fin = pygame.Surface(self.size, pygame.SRCALPHA)
         pygame.draw.ellipse(fin, self.col, (0, 0, *self.size))
 
@@ -33,5 +33,5 @@ class Fin:
             return (pos[0]-f.get_width()//2, pos[1]-f.get_height()//2)
         fin1 = pygame.transform.rotate(fin, -angle-90-self.angle)
         fin2 = pygame.transform.rotate(fin, -angle-90+self.angle)
-        win.blit(fin1, offset(body.findOnCircle(angle-90, 0.8), fin1))
-        win.blit(fin2, offset(body.findOnCircle(angle+90, 0.8), fin2))
+        win.blit(fin1, offset(seg.findOnCircle(angle-90, 0.8), fin1))
+        win.blit(fin2, offset(seg.findOnCircle(angle+90, 0.8), fin2))

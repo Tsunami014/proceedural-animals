@@ -117,6 +117,16 @@ class Animal:
         for i in range(len(self.segments)-1, 0, -1):
             self.segments[i-1].constrain(self.segments[i].pos, self.conSze)
     
+    @property
+    def totalCurvaturePerc(self):
+        alls = [
+            self.segments[i+1].angleTo(self.segments[i])%360 for i in range(len(self.segments)-1)
+        ]
+        diffs = sum(abs(angleDiff(alls[i],alls[i+1])) for i in range(len(alls)-1))
+        max_diff = 180 * (len(alls)-2)
+
+        return diffs/max_diff * 100
+    
     def draw(self, win):
         newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
 
@@ -127,7 +137,7 @@ class Animal:
                 a = self.segments[i].angleTo(self.segments[i-1])
             for m in self.segments[i].mods:
                 if m.lay == layer.BEHIND:
-                    m.draw(newsur, self.segments[i], a)
+                    m.draw(newsur, self, self.segments[i], a)
 
         for p in self.segments:
             p.draw(newsur, self.bodyCol)
@@ -212,7 +222,7 @@ class Animal:
                 a = self.segments[i].angleTo(self.segments[i-1])
             for m in self.segments[i].mods:
                 if m.lay == layer.FRONT:
-                    m.draw(newsur, self.segments[i], a)
+                    m.draw(newsur, self, self.segments[i], a)
 
         mask = pygame.mask.from_surface(newsur)
         surface_outline = mask.convolve(self.convolution_mask).to_surface(setcolor=self.outlineCol, unsetcolor=newsur.get_colorkey())
