@@ -1,7 +1,7 @@
 import math
 import pygame
 
-def GenCubicBezierCurve(start, control1, control2, end, steps=100):
+def GenCubicBezierCurve(start, control1, control2, end, steps=200): # Increase steps for smoother curve
     points = []
     for t in range(steps + 1):
         t /= steps
@@ -33,7 +33,7 @@ class Segment:
         self.x, self.y = ox+math.cos(phi)*osize, oy+math.sin(phi)*osize
     
     def findOnCircle(self, angle):
-        return self.x+math.cos(math.radians(angle))*self.size, self.y+math.sin(math.radians(angle))*self.size
+        return self.x+math.cos(math.radians(angle))*self.size, self.y+math.sin(math.radians(angle))*self.size*0.99
     
     def angleTo(self, opoint):
         return math.degrees(math.atan2(opoint[1] - self.y, opoint[0] - self.x))-180 % 360
@@ -104,19 +104,36 @@ class Animal:
                         #pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
                         newsegs.append(newp)
                 
-                def calculateBezierCurve(p1, p2):
-                    # Calculate the control points
-                    center_x = (p1[0] + p2[0]) / 2
-                    center_y = (p1[1] + p2[1]) / 2
-                    
-                    control1 = ((p1[0] + center_x) / 2, (p1[1] + center_y) / 2)
-                    control2 = ((p2[0] + center_x) / 2, (p2[1] + center_y) / 2)
-                    
+                def calculateBezierCurve(p1, p2, midp, angle_diff):
+                    # Calculate curvature strength based on the angle difference
+                    # The more the angle difference, the more curved the control points
+                    curve_strength = max(-3.0, min(3.0, angle_diff / 45.0))  # Adjust ratio for curve strength
+
+                    # Control points are pulled outward based on curve_strength
+                    control1 = ((p1[0] + midp[0] * curve_strength) / (1 + curve_strength), 
+                                (p1[1] + midp[1] * curve_strength) / (1 + curve_strength))
+                    control2 = ((p2[0] + midp[0] * curve_strength) / (1 + curve_strength), 
+                                (p2[1] + midp[1] * curve_strength) / (1 + curve_strength))
+
                     return GenCubicBezierCurve(p1, control1, control2, p2)
 
                 ps = []
-                ps.extend(calculateBezierCurve(newsegs[0], newsegs[3]))
-                ps.extend(calculateBezierCurve(newsegs[2], newsegs[1]))
+                midp = self.segments[i].findOnCircle(ang)
+
+                # Get the angle between the current segment and the next/previous one
+                current_angle = self.segments[i].angleTo(self.segments[i + off])
+                
+                # Get the angle of the segment before or after (depending on off)
+                if i + off + off >= 0 and i + off + off < len(self.segments):
+                    next_angle = self.segments[i + off].angleTo(self.segments[i + off + off])
+                    # Calculate the angular difference between the two segments
+                    angle_diff = abs(next_angle - current_angle)
+                else:
+                    angle_diff = 0
+
+                ps.extend(calculateBezierCurve(newsegs[0], newsegs[3], midp, angle_diff))
+                ps.extend(calculateBezierCurve(newsegs[2], newsegs[1], midp, angle_diff))
+                
                 pygame.draw.polygon(newsur, self.bodyCol, ps)
                 # pygame.draw.polygon(newsur, self.bodyCol, newsegs)
                 # pygame.draw.polygon(newsur, (255, 50, 50), newsegs, 3)
