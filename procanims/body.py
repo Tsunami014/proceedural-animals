@@ -92,31 +92,49 @@ class Animal:
         newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
         for p in self.segments:
             pygame.draw.circle(newsur, self.bodyCol, p.pos, p.size)
+        
         for i in range(len(self.segments)):
             for off in (-1, 1):
-                if i+off < 0 or i+off >= len(self.segments):
+                if i + off < 0 or i + off >= len(self.segments):
                     continue
-                ang = self.segments[i+off].angleTo(self.segments[i])
+                ang = self.segments[i + off].angleTo(self.segments[i])
                 newsegs = []
-                for seg, js in ((self.segments[i+off], (-90, 90)), (self.segments[i], (90, -90))):
+                for seg, js in ((self.segments[i + off], (-90, 90)), (self.segments[i], (90, -90))):
                     for j in js:
                         newp = seg.findOnCircle(ang + j)
-                        #pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
+                        # pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
                         newsegs.append(newp)
-                
+        
+                def mirror_point(p1, p2, point):
+                    dx = p2[0] - p1[0]
+                    dy = p2[1] - p1[1]
+                    length = math.hypot(dx, dy)
+                    dx /= length
+                    dy /= length
+                    dot = (point[0] - p1[0]) * dx + (point[1] - p1[1]) * dy
+                    proj_x = p1[0] + dot * dx
+                    proj_y = p1[1] + dot * dy
+                    mirror_x = 2 * proj_x - point[0]
+                    mirror_y = 2 * proj_y - point[1]
+                    return (mirror_x, mirror_y)
+        
                 def calculateBezierCurve(p1, p2, midp, angle_diff):
-                    # Calculate curvature strength based on the angle difference
-                    # The more the angle difference, the more curved the control points
-                    curve_strength = max(-3.0, min(3.0, angle_diff / 45.0))  # Adjust ratio for curve strength
-
-                    # Control points are pulled outward based on curve_strength
-                    control1 = ((p1[0] + midp[0] * curve_strength) / (1 + curve_strength), 
-                                (p1[1] + midp[1] * curve_strength) / (1 + curve_strength))
-                    control2 = ((p2[0] + midp[0] * curve_strength) / (1 + curve_strength), 
-                                (p2[1] + midp[1] * curve_strength) / (1 + curve_strength))
-
+                    if angle_diff < 1:
+                        angle_diff = angle_diff * 0.5
+                    curve_strength = max(0.1, min(3.0, abs(angle_diff) / 45.0))
+                    if angle_diff > 0:
+                        control1 = ((p1[0] + midp[0] * curve_strength) / (1 + curve_strength),
+                                    (p1[1] + midp[1] * curve_strength) / (1 + curve_strength))
+                        control2 = ((p2[0] + midp[0] * curve_strength) / (1 + curve_strength),
+                                    (p2[1] + midp[1] * curve_strength) / (1 + curve_strength))
+                    else:
+                        midp = mirror_point(p1, p2, midp)
+                        control1 = ((p1[0] + midp[0] * curve_strength) / (1 + curve_strength),
+                                    (p1[1] + midp[1] * curve_strength) / (1 + curve_strength))
+                        control2 = ((p2[0] + midp[0] * curve_strength) / (1 + curve_strength),
+                                    (p2[1] + midp[1] * curve_strength) / (1 + curve_strength))
                     return GenCubicBezierCurve(p1, control1, control2, p2)
-
+        
                 ps = []
                 midp = self.segments[i].findOnCircle(ang)
 
@@ -127,13 +145,26 @@ class Animal:
                 if i + off + off >= 0 and i + off + off < len(self.segments):
                     next_angle = self.segments[i + off].angleTo(self.segments[i + off + off])
                     # Calculate the angular difference between the two segments
-                    angle_diff = abs(next_angle - current_angle)
+                    mod = lambda a, n: a - math.floor(a/n) * n
+                    a = next_angle - current_angle
+                    angle_diff = mod((a + 180), 360) - 180
+                    angle_diff = abs(angle_diff)
+                    # angle_diff = min((next_angle - current_angle) % 360, (360 - next_angle - current_angle) % 360)
                 else:
                     angle_diff = 0
-
-                ps.extend(calculateBezierCurve(newsegs[0], newsegs[3], midp, angle_diff))
-                ps.extend(calculateBezierCurve(newsegs[2], newsegs[1], midp, angle_diff))
+        
+                if i + off - 1 >= 0 and i + off + 1 < len(self.segments):
+                    next_angle = self.segments[i + off].angleTo(self.segments[i + off + 1])
+                    prev_angle = self.segments[i + off].angleTo(self.segments[i + off - 1])
+                    if (next_angle - prev_angle) % 360 > 180:
+                        angle_diff = -angle_diff
                 
+                if off == -1:
+                    angle_diff = -angle_diff
+                
+                ps.extend(calculateBezierCurve(newsegs[0], newsegs[3], midp, angle_diff))
+                ps.extend(calculateBezierCurve(newsegs[2], newsegs[1], midp, -angle_diff))
+        
                 pygame.draw.polygon(newsur, self.bodyCol, ps)
                 # pygame.draw.polygon(newsur, self.bodyCol, newsegs)
                 # pygame.draw.polygon(newsur, (255, 50, 50), newsegs, 3)
