@@ -12,12 +12,16 @@ def GenCubicBezierCurve(start, control1, control2, end, steps=200): # Increase s
     return points
 
 def makeAnimal(sizes, constrainSize=None, outlineColour=(0, 0, 0), bodyColour=(255, 255, 255)):
-    y = max(sizes)/2
+    y = max([i if not isinstance(i, (list, tuple)) else i[0] for i in sizes])/2
     segs = []
     x = 0
     for i in sizes:
-        x += i
-        segs.append(Segment(x, y, i))
+        if isinstance(i, (list, tuple)):
+            x += i[0]
+            segs.append(Segment(x, y, i[0], *i[1:]))
+        else:
+            x += i
+            segs.append(Segment(x, y, i))
     return Animal(segs, constrainSize, outlineColour, bodyColour)
 
 def angleDiff(a1, a2):
@@ -26,10 +30,11 @@ def angleDiff(a1, a2):
     return mod((a + 180), 360) - 180
 
 class Segment:
-    def __init__(self, x, y, size):
+    def __init__(self, x, y, size, *modifiers):
         self.x = x
         self.y = y
         self.size = size
+        self.mods = modifiers
     
     @property
     def pos(self):
@@ -55,14 +60,18 @@ class Segment:
         # Position the segment at the new location
         self.x, self.y = ox+math.cos(phi)*osize, oy+math.sin(phi)*osize
     
-    def findOnCircle(self, angle):
-        return self.x+math.cos(math.radians(angle))*self.size, self.y+math.sin(math.radians(angle))*self.size*0.99
+    def findOnCircle(self, angle, scale=0.99):
+        return self.x+math.cos(math.radians(angle))*self.size*scale, self.y+math.sin(math.radians(angle))*self.size*scale
     
     def angleTo(self, opoint):
         return math.degrees(math.atan2(opoint[1] - self.y, opoint[0] - self.x))-180 % 360
 
     def draw(self, win, col):
         pygame.draw.circle(win, col, self.pos, self.size)
+    
+    def draw_mods(self, win, angle):
+        for m in self.mods:
+            m.draw(win, self, angle)
     
     def __getitem__(self, key):
         if key == 0:
@@ -188,6 +197,13 @@ class Animal:
                 pygame.draw.polygon(newsur, self.bodyCol, ps)
                 # pygame.draw.polygon(newsur, self.bodyCol, newsegs)
                 # pygame.draw.polygon(newsur, (255, 50, 50), newsegs, 3)
+        
+        for i in range(len(self.segments)):
+            if i == 0:
+                a = self.segments[i+1].angleTo(self.segments[i])
+            else:
+                a = self.segments[i].angleTo(self.segments[i-1])
+            self.segments[i].draw_mods(newsur, a)
 
         mask = pygame.mask.from_surface(newsur)
         surface_outline = mask.convolve(self.convolution_mask).to_surface(setcolor=self.outlineCol, unsetcolor=newsur.get_colorkey())

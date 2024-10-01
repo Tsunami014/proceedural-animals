@@ -1,12 +1,14 @@
 try:
     from procanims.body import makeAnimal
+    from procanims.mods import Eyes
 except ImportError:
     from body import makeAnimal
+    from mods import Eyes
 import pygame
 pygame.init()
 win = pygame.display.set_mode((1000, 1000))
 
-anim = makeAnimal(list(range(10, 20)) + [27, 25], 42, bodyColour=(255, 50, 50))
+anim = makeAnimal(list(range(10, 20)) + [(25, Eyes())], 42, bodyColour=(255, 50, 50))
 
 clock = pygame.time.Clock()
 run = True
