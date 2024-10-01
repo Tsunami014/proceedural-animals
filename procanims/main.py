@@ -1,12 +1,12 @@
 try:
-    from procanims.body import Segment, Animal
+    from procanims.body import makeAnimal
 except ImportError:
-    from body import Segment, Animal
+    from body import makeAnimal
 import pygame
 pygame.init()
 win = pygame.display.set_mode((1000, 1000))
 
-anim = Animal([Segment(250, 250, i) for i in range(10, 20)] + [Segment(250, 250, i) for i in [27, 25]], 42)
+anim = makeAnimal(list(range(10, 20)) + [27, 25], 42, bodyColour=(255, 50, 50))
 
 clock = pygame.time.Clock()
 run = True

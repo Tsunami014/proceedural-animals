@@ -11,6 +11,20 @@ def GenCubicBezierCurve(start, control1, control2, end, steps=200): # Increase s
     
     return points
 
+def makeAnimal(sizes, constrainSize=None, outlineColour=(0, 0, 0), bodyColour=(255, 255, 255)):
+    y = max(sizes)/2
+    segs = []
+    x = 0
+    for i in sizes:
+        x += i
+        segs.append(Segment(x, y, i))
+    return Animal(segs, constrainSize, outlineColour, bodyColour)
+
+def angleDiff(a1, a2):
+    mod = lambda a, n: a - math.floor(a/n) * n
+    a = a1 - a2
+    return mod((a + 180), 360) - 180
+
 class Segment:
     def __init__(self, x, y, size):
         self.x = x
@@ -25,11 +39,20 @@ class Segment:
     def pos(self, value):
         self.x, self.y = value
     
-    def constrain(self, opoint, osize=None):
+    def constrain(self, opoint, osize=None, minAng=50):
         ox, oy = opoint[0], opoint[1]
         if osize is None:
             osize = opoint[2]
+        
         phi = math.atan2(oy - self.y, ox - self.x)-math.pi
+        minAng = math.radians(minAng)
+        a_diff = angleDiff(math.degrees(phi), math.degrees(math.atan2(oy - self.y, ox - self.x)))
+        
+        # Adjust angle if the angle difference is within the minimum angle
+        if abs(a_diff) < minAng:
+            phi += minAng if a_diff > 0 else -minAng
+        
+        # Position the segment at the new location
         self.x, self.y = ox+math.cos(phi)*osize, oy+math.sin(phi)*osize
     
     def findOnCircle(self, angle):
@@ -38,8 +61,8 @@ class Segment:
     def angleTo(self, opoint):
         return math.degrees(math.atan2(opoint[1] - self.y, opoint[0] - self.x))-180 % 360
 
-    def isColliding(self, opoint):
-        return math.hypot(self.x - opoint[0], self.y - opoint[1]) <= self.size + opoint[2]
+    def draw(self, win, col):
+        pygame.draw.circle(win, col, self.pos, self.size)
     
     def __getitem__(self, key):
         if key == 0:
@@ -91,7 +114,7 @@ class Animal:
     def draw(self, win):
         newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
         for p in self.segments:
-            pygame.draw.circle(newsur, self.bodyCol, p.pos, p.size)
+            p.draw(newsur, self.bodyCol)
         
         for i in range(len(self.segments)):
             for off in (-1, 1):
@@ -145,10 +168,7 @@ class Animal:
                 if i + off + off >= 0 and i + off + off < len(self.segments):
                     next_angle = self.segments[i + off].angleTo(self.segments[i + off + off])
                     # Calculate the angular difference between the two segments
-                    mod = lambda a, n: a - math.floor(a/n) * n
-                    a = next_angle - current_angle
-                    angle_diff = mod((a + 180), 360) - 180
-                    angle_diff = abs(angle_diff)
+                    angle_diff = abs(angleDiff(next_angle, current_angle))
                     # angle_diff = min((next_angle - current_angle) % 360, (360 - next_angle - current_angle) % 360)
                 else:
                     angle_diff = 0
