@@ -9,6 +9,8 @@
             "type": "debugpy",
             "request": "launch",
             "program": "procanims/main.py",
+            "cwd": "${workspaceFolder}",
+            "env": { "PYTHONPATH": "${workspaceRoot}"},
             "justMyCode": false,
             "console": "integratedTerminal"
         },

@@ -1,5 +1,6 @@
 import math
 import pygame
+from procanims.mods import layer
 
 def GenCubicBezierCurve(start, control1, control2, end, steps=200): # Increase steps for smoother curve
     points = []
@@ -69,10 +70,6 @@ class Segment:
     def draw(self, win, col):
         pygame.draw.circle(win, col, self.pos, self.size)
     
-    def draw_mods(self, win, angle):
-        for m in self.mods:
-            m.draw(win, self, angle)
-    
     def __getitem__(self, key):
         if key == 0:
             return self.x
@@ -122,6 +119,16 @@ class Animal:
     
     def draw(self, win):
         newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
+
+        for i in range(len(self.segments)):
+            if i == 0:
+                a = self.segments[i+1].angleTo(self.segments[i])
+            else:
+                a = self.segments[i].angleTo(self.segments[i-1])
+            for m in self.segments[i].mods:
+                if m.lay == layer.BEHIND:
+                    m.draw(newsur, self.segments[i], a)
+
         for p in self.segments:
             p.draw(newsur, self.bodyCol)
         
@@ -203,7 +210,9 @@ class Animal:
                 a = self.segments[i+1].angleTo(self.segments[i])
             else:
                 a = self.segments[i].angleTo(self.segments[i-1])
-            self.segments[i].draw_mods(newsur, a)
+            for m in self.segments[i].mods:
+                if m.lay == layer.FRONT:
+                    m.draw(newsur, self.segments[i], a)
 
         mask = pygame.mask.from_surface(newsur)
         surface_outline = mask.convolve(self.convolution_mask).to_surface(setcolor=self.outlineCol, unsetcolor=newsur.get_colorkey())

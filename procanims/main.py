@@ -1,14 +1,21 @@
-try:
-    from procanims.body import makeAnimal
-    from procanims.mods import Eyes
-except ImportError:
-    from body import makeAnimal
-    from mods import Eyes
+from procanims.body import makeAnimal
+from procanims.mods import Eyes, Fin
 import pygame
 pygame.init()
 win = pygame.display.set_mode((1000, 1000))
 
-anim = makeAnimal(list(range(10, 20)) + [(25, Eyes())], 42, bodyColour=(255, 50, 50))
+def chooseAnimal(c):
+    if c == 0:
+        return makeAnimal(list(range(10, 20)) + [(25, Eyes())], 42, bodyColour=(255, 50, 50))
+    if c == 1:
+        return makeAnimal([14, 23, (30, Fin((10, 50, 255))), (25, Eyes())], 42, bodyColour=(60, 100, 250))
+
+anim = chooseAnimal(0)
+
+numbers = [
+    pygame.K_0,
+    pygame.K_1,
+]
 
 clock = pygame.time.Clock()
 run = True
@@ -19,6 +26,9 @@ while run:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 run = False
+            elif event.key in numbers:
+                anim = chooseAnimal(numbers.index(event.key))
+    
     win.fill(pygame.color.THECOLORS["skyblue"])
 
     anim.set_pos(pygame.mouse.get_pos())
