@@ -1,6 +1,16 @@
 import math
 import pygame
 
+def GenCubicBezierCurve(start, control1, control2, end, steps=100):
+    points = []
+    for t in range(steps + 1):
+        t /= steps
+        x = ((1 - t) ** 3) * start[0] + 3 * ((1 - t) ** 2) * t * control1[0] + 3 * (1 - t) * (t ** 2) * control2[0] + (t ** 3) * end[0]
+        y = ((1 - t) ** 3) * start[1] + 3 * ((1 - t) ** 2) * t * control1[1] + 3 * (1 - t) * (t ** 2) * control2[1] + (t ** 3) * end[1]
+        points.append((x, y))
+    
+    return points
+
 class Segment:
     def __init__(self, x, y, size):
         self.x = x
@@ -23,7 +33,7 @@ class Segment:
         self.x, self.y = ox+math.cos(phi)*osize, oy+math.sin(phi)*osize
     
     def findOnCircle(self, angle):
-        return self.x+math.cos(math.radians(angle))*self.size*0.99, self.y+math.sin(math.radians(angle))*self.size*0.99
+        return self.x+math.cos(math.radians(angle))*self.size, self.y+math.sin(math.radians(angle))*self.size
     
     def angleTo(self, opoint):
         return math.degrees(math.atan2(opoint[1] - self.y, opoint[0] - self.x))-180 % 360
@@ -82,7 +92,6 @@ class Animal:
         newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
         for p in self.segments:
             pygame.draw.circle(newsur, self.bodyCol, p.pos, p.size)
-        
         for i in range(len(self.segments)):
             for off in (-1, 1):
                 if i+off < 0 or i+off >= len(self.segments):
@@ -94,7 +103,22 @@ class Animal:
                         newp = seg.findOnCircle(ang + j)
                         #pygame.draw.circle(newsur, (255, 50, 50), newp, 2, 3)
                         newsegs.append(newp)
-                pygame.draw.polygon(newsur, self.bodyCol, newsegs)
+                
+                def calculateBezierCurve(p1, p2):
+                    # Calculate the control points
+                    center_x = (p1[0] + p2[0]) / 2
+                    center_y = (p1[1] + p2[1]) / 2
+                    
+                    control1 = ((p1[0] + center_x) / 2, (p1[1] + center_y) / 2)
+                    control2 = ((p2[0] + center_x) / 2, (p2[1] + center_y) / 2)
+                    
+                    return GenCubicBezierCurve(p1, control1, control2, p2)
+
+                ps = []
+                ps.extend(calculateBezierCurve(newsegs[0], newsegs[3]))
+                ps.extend(calculateBezierCurve(newsegs[2], newsegs[1]))
+                pygame.draw.polygon(newsur, self.bodyCol, ps)
+                # pygame.draw.polygon(newsur, self.bodyCol, newsegs)
                 # pygame.draw.polygon(newsur, (255, 50, 50), newsegs, 3)
 
         mask = pygame.mask.from_surface(newsur)
