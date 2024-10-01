@@ -1,5 +1,5 @@
 from procanims.body import makeAnimal
-from procanims.mods import Eyes, Fin
+from procanims.mods import Eyes, Fin, BackFin
 import pygame
 pygame.init()
 win = pygame.display.set_mode((1000, 1000))
@@ -8,7 +8,7 @@ def chooseAnimal(c):
     if c == 0:
         return makeAnimal(list(range(10, 20)) + [(25, Eyes())], 42, bodyColour=(255, 50, 50))
     if c == 1:
-        return makeAnimal([10, (14, Fin((60, 100, 250), (20, 40))), 23, (30, Fin((60, 100, 250))), (25, Eyes())], 42, bodyColour=(10, 50, 255))
+        return makeAnimal([10, (14, Fin((60, 100, 250), (20, 40))), (23, BackFin((60, 100, 250))), (30, Fin((60, 100, 250))), (25, Eyes())], 42, bodyColour=(10, 50, 255))
 
 anim = chooseAnimal(0)
 

@@ -1,5 +1,6 @@
 import pygame
 from enum import Enum
+from procanims.body import GenCubicBezierCurve
 
 class layer(Enum):
     BEHIND = 0
@@ -35,3 +36,20 @@ class Fin:
         fin2 = pygame.transform.rotate(fin, -angle-90+self.angle)
         win.blit(fin1, offset(seg.findOnCircle(angle-90, 0.8), fin1))
         win.blit(fin2, offset(seg.findOnCircle(angle+90, 0.8), fin2))
+
+class BackFin:
+    lay = layer.FRONT
+    def __init__(self, col, length=30, buffersze=3):
+        self.col = col
+        self.len = length
+        self.buffer = []
+        self.buffersze = buffersze
+    
+    def draw(self, win, body, seg, angle):
+
+        self.buffer.append((seg.x, seg.y))
+        anchx, anchy = self.buffer[0]
+        if len(self.buffer) > self.buffersze:
+            del self.buffer[0]
+        
+        pygame.draw.polygon(win, self.col, GenCubicBezierCurve(seg.findOnCircle(angle, 0.8), (anchx, anchy), (anchx, anchy), seg.findOnCircle(angle-180, 0.8), 10), 5)

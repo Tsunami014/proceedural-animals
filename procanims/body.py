@@ -1,6 +1,5 @@
 import math
 import pygame
-from procanims.mods import layer
 
 def GenCubicBezierCurve(start, control1, control2, end, steps=200): # Increase steps for smoother curve
     points = []
@@ -128,6 +127,7 @@ class Animal:
         return diffs/max_diff * 100
     
     def draw(self, win):
+        from procanims.mods import layer
         newsur = pygame.Surface(win.get_size(), pygame.SRCALPHA)
 
         for i in range(len(self.segments)):
